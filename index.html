@@ -1,0 +1,115 @@
+from pathlib import Path
+import zipfile, textwrap
+
+base = Path("/mnt/data/classroomduck_site")
+base.mkdir(exist_ok=True)
+
+html = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Duck Arcade</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#home"><span class="duck">🦆</span><span>Duck<span class="accent">Arcade</span></span></a>
+    <nav><a href="#home">Home</a><a href="#all-games">Games</a><a href="#favorites">Favorites</a></nav>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">YOUR NEXT BREAK STARTS HERE</p>
+        <h1>Pick a game.<br><span>Take a break.</span></h1>
+        <p class="sub">A searchable collection of browser games. Choose a game to open it in a new tab or try the in-page player when the game allows embedding.</p>
+        <a class="primary" href="#all-games">Explore games <span>↗</span></a>
+      </div>
+      <div class="hero-art" aria-hidden="true"><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="duck-big">🦆</div><div class="spark">✦</div></div>
+    </section>
+
+    <section class="toolbar" id="all-games">
+      <div><p class="eyebrow">THE LIBRARY</p><h2>All games</h2></div>
+      <div class="tools">
+        <input id="search" type="search" placeholder="Search games..." aria-label="Search games">
+        <select id="category" aria-label="Filter by category"><option value="All">All categories</option></select>
+      </div>
+    </section>
+    <section class="chips" id="category-chips"></section>
+    <section class="game-grid" id="game-grid" aria-live="polite"></section>
+
+    <section class="favorites-section" id="favorites">
+      <div><p class="eyebrow">YOUR SHORTLIST</p><h2>Favorites <span class="fav-count" id="fav-count">0</span></h2></div>
+      <p class="muted">Tap the star on any game to save it here on this device.</p>
+      <div class="game-grid" id="favorite-grid"></div>
+    </section>
+  </main>
+  <footer><span>🦆 Duck Arcade</span><span>Game links are provided by their respective publishers.</span></footer>
+
+  <div class="player-backdrop" id="player" hidden>
+    <section class="player-panel" role="dialog" aria-modal="true" aria-labelledby="player-title">
+      <div class="player-head"><div><p class="eyebrow">NOW PLAYING</p><h2 id="player-title">Game</h2></div><button id="close-player" class="icon-btn" aria-label="Close">✕</button></div>
+      <iframe id="game-frame" title="Game player" allow="fullscreen; autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
+      <div class="player-foot"><span id="frame-note">If the game does not load here, open it directly.</span><a id="open-direct" class="primary small" target="_blank" rel="noopener noreferrer">Open game in new tab ↗</a></div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
+"""
+
+css = """@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+:root{--bg:#0b1020;--panel:#141c30;--panel2:#1b2740;--text:#f4f7ff;--muted:#9eabc4;--lime:#c6f36b;--line:#293650}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 75% 0%,#1c2a43 0,transparent 38%),var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 max(5vw,22px);border-bottom:1px solid #ffffff12;background:#0b1020cc;position:sticky;top:0;z-index:5;backdrop-filter:blur(16px)}.brand{display:flex;gap:10px;align-items:center;color:var(--text);text-decoration:none;font:700 21px 'Space Grotesk'}.duck{font-size:27px}.accent,.hero h1 span{color:var(--lime)}nav{display:flex;gap:26px}nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:14px}nav a:hover{color:var(--lime)}main{width:min(1120px,90vw);margin:auto}.hero{min-height:390px;display:flex;align-items:center;justify-content:space-between;padding:55px 4% 45px;overflow:hidden}.hero-copy{max-width:570px;position:relative;z-index:1}.eyebrow{font-size:10px;letter-spacing:2.2px;color:var(--lime);font-weight:800;margin:0 0 12px}.hero h1{font:700 clamp(42px,6vw,68px)/1.03 'Space Grotesk';letter-spacing:-2.8px;margin:0}.sub{color:var(--muted);line-height:1.7;max-width:510px;margin:20px 0 26px}.primary{display:inline-flex;align-items:center;gap:22px;background:var(--lime);color:#18220b;padding:13px 18px;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;border:0;cursor:pointer}.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}.hero-art{width:330px;height:270px;position:relative;display:grid;place-items:center}.duck-big{font-size:145px;filter:drop-shadow(0 20px 25px #0008);transform:rotate(-9deg);z-index:1}.orb{position:absolute;border-radius:50%;filter:blur(1px)}.orb-one{width:230px;height:230px;background:linear-gradient(135deg,#c6f36b,#559c78);opacity:.18}.orb-two{width:85px;height:85px;background:#c6f36b;opacity:.12;right:0;top:0}.spark{position:absolute;color:var(--lime);font-size:48px;right:35px;top:15px}.toolbar{display:flex;align-items:end;justify-content:space-between;gap:20px;padding-top:32px;border-top:1px solid var(--line)}h2{font:700 27px 'Space Grotesk';margin:0}.tools{display:flex;gap:10px}.tools input,.tools select{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:12px 14px;font:500 13px 'DM Sans';outline:none}.tools input{width:220px}.tools input:focus,.tools select:focus{border-color:var(--lime)}.chips{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}.chip{border:1px solid var(--line);background:transparent;color:var(--muted);padding:8px 13px;border-radius:30px;font-size:12px;cursor:pointer}.chip.active,.chip:hover{background:#c6f36b18;color:var(--lime);border-color:#c6f36b66}.game-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.game-card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:.2s;min-width:0}.game-card:hover{transform:translateY(-4px);border-color:#78934f}.game-cover{height:116px;display:grid;place-items:center;font-size:53px;background:radial-gradient(circle at 50% 45%,#344663,#1a263d 70%);position:relative}.game-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(130deg,transparent,#ffffff08)}.game-info{padding:13px}.game-info h3{font:700 15px 'Space Grotesk';margin:0 0 5px}.game-info p{font-size:11px;color:var(--muted);margin:0 0 13px}.card-bottom{display:flex;align-items:center;justify-content:space-between}.play-btn{background:#c6f36b;color:#17210b;border:0;border-radius:7px;padding:8px 12px;font-weight:800;font-size:11px;cursor:pointer}.star{border:0;background:transparent;color:#8390a8;font-size:20px;cursor:pointer}.star.saved{color:var(--lime)}.favorites-section{margin:70px 0 60px;padding-top:30px;border-top:1px solid var(--line)}.favorites-section>div:first-child{display:flex;align-items:center;gap:12px}.fav-count{font:600 12px 'DM Sans';background:#c6f36b20;color:var(--lime);padding:4px 8px;border-radius:20px}.muted{color:var(--muted);font-size:13px;margin:10px 0 20px}.empty{grid-column:1/-1;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:24px;text-align:center;font-size:13px}footer{border-top:1px solid var(--line);padding:24px 5vw;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.player-backdrop{position:fixed;inset:0;background:#030712eF;z-index:10;display:grid;place-items:center;padding:20px}.player-panel{width:min(1050px,96vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}.player-head{display:flex;align-items:center;justify-content:space-between;padding:0 2px 12px}.player-head h2{font-size:21px}.icon-btn{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer}iframe{width:100%;height:min(65vh,620px);background:#080d18;border:1px solid var(--line);border-radius:10px}.player-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;color:var(--muted);font-size:11px}.primary.small{padding:10px 13px;font-size:11px;white-space:nowrap}[hidden]{display:none!important}
+@media(max-width:850px){.game-grid{grid-template-columns:repeat(3,1fr)}.hero-art{width:230px}.duck-big{font-size:115px}}@media(max-width:620px){.topbar{height:64px}nav{gap:12px}nav a{font-size:12px}.hero{padding:48px 0 35px;min-height:340px}.hero-art{position:absolute;right:-65px;opacity:.28}.hero-copy{max-width:100%}.toolbar{align-items:stretch;flex-direction:column}.tools input{flex:1;width:100%;min-width:0}.tools select{max-width:150px}.game-grid{grid-template-columns:repeat(2,1fr);gap:10px}.game-cover{height:95px}.game-info{padding:10px}.player-foot,footer{align-items:flex-start;flex-direction:column}.player-panel{padding:10px}iframe{height:58vh}}
+"""
+
+js = """const games = [
+ {name:"Bloxorz",category:"Puzzle",emoji:"🧊",description:"Roll the block into the square hole.",url:"https://www.coolmathgames.com/0-bloxorz"},
+ {name:"Run 3",category:"Platformer",emoji:"🏃",description:"Run through twisting space tunnels.",url:"https://www.coolmathgames.com/0-run-3"},
+ {name:"Slope",category:"Arcade",emoji:"🟢",description:"Race down a fast neon slope.",url:"https://poki.com/en/g/slope"},
+ {name:"Retro Bowl",category:"Sports",emoji:"🏈",description:"Build a team and win the championship.",url:"https://www.crazygames.com/game/retro-bowl"},
+ {name:"Basketball Stars",category:"Sports",emoji:"🏀",description:"One-on-one basketball action.",url:"https://www.crazygames.com/game/basketball-stars"},
+ {name:"Moto X3M",category:"Racing",emoji:"🏍️",description:"Tricky motorcycle stunt tracks.",url:"https://www.coolmathgames.com/0-moto-x3m"},
+ {name:"2048",category:"Puzzle",emoji:"🔢",description:"Combine tiles to reach 2048.",url:"https://play2048.co/"},
+ {name:"Cookie Clicker",category:"Idle",emoji:"🍪",description:"Bake an unreasonable number of cookies.",url:"https://orteil.dashnet.org/cookieclicker/"},
+ {name:"Fireboy & Watergirl",category:"Puzzle",emoji:"🔥",description:"Team up to solve temple puzzles.",url:"https://www.coolmathgames.com/0-fireboy-and-water-girl-in-the-forest-temple"},
+ {name:"Chess",category:"Strategy",emoji:"♟️",description:"Play chess in your browser.",url:"https://www.chess.com/play/computer"},
+ {name:"Agar.io",category:"Arcade",emoji:"🫧",description:"Grow bigger by collecting cells.",url:"https://agar.io/"},
+ {name:"Tetris",category:"Puzzle",emoji:"🧱",description:"Fit the falling blocks together.",url:"https://tetris.com/play-tetris"},
+ {name:"Pac-Man",category:"Arcade",emoji:"👾",description:"Clear the maze and dodge ghosts.",url:"https://www.google.com/logos/2010/pacman10-i.html"},
+ {name:"Drift Boss",category:"Racing",emoji:"🚗",description:"Time your drifts on a narrow track.",url:"https://www.crazygames.com/game/drift-boss"},
+ {name:"Little Alchemy 2",category:"Puzzle",emoji:"🧪",description:"Combine elements to discover things.",url:"https://littlealchemy2.com/"},
+ {name:"Shell Shockers",category:"Action",emoji:"🥚",description:"Egg-themed multiplayer shooter.",url:"https://shellshock.io/"},
+ {name:"Bloons Tower Defense 5",category:"Strategy",emoji:"🎈",description:"Build defenses and pop the bloons.",url:"https://ninjakiwi.com/Games/Mobile/Bloons-TD-5.html"},
+ {name:"World's Hardest Game",category:"Arcade",emoji:"🟥",description:"Dodge hazards in a tough challenge.",url:"https://www.coolmathgames.com/0-worlds-hardest-game"},
+ {name:"Stickman Hook",category:"Arcade",emoji:"🪝",description:"Swing your way through each level.",url:"https://poki.com/en/g/stickman-hook"},
+ {name:"Subway Surfers",category:"Runner",emoji:"🚇",description:"Dash through the subway and avoid trains.",url:"https://poki.com/en/g/subway-surfers"},
+ {name:"Crossy Road",category:"Arcade",emoji:"🐔",description:"Cross roads, rivers, and train tracks.",url:"https://poki.com/en/g/crossy-road"},
+ {name:"Geometry Dash",category:"Platformer",emoji:"🔺",description:"Jump and fly through rhythm levels.",url:"https://www.crazygames.com/game/ geometry-dash"},
+ {name:"Slope 2",category:"Arcade",emoji:"🌌",description:"Another fast downhill rolling challenge.",url:"https://poki.com/en/g/slope"},
+ {name:"Chess.com Puzzles",category:"Strategy",emoji:"🧠",description:"Solve tactical chess puzzles.",url:"https://www.chess.com/puzzles"}
+];
+const $ = s => document.querySelector(s);
+const grid = $("#game-grid"), favGrid = $("#favorite-grid");
+let favorites = new Set(JSON.parse(localStorage.getItem("duckArcadeFavorites") || "[]"));
+let activeCategory = "All";
+const categories = ["All", ...new Set(games.map(g=>g.category))];
+categories.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c==="All"?"All categories":c;$("#category").append(o)});
+categories.forEach(c=>{const b=document.createElement("button");b.className="chip"+(c==="All"?" active":"");b.textContent=c;b.onclick=()=>{activeCategory=c;$("#category").value=c;render()};$("#category-chips").append(b)});
+function card(g){const i=games.indexOf(g);const el=document.createElement("article");el.className="game-card";el.innerHTML=`<div class="game-cover">${g.emoji}</div><div class="game-info"><h3>${g.name}</h3><p>${g.description}</p><div class="card-bottom"><button class="play-btn">PLAY ↗</button><button class="star ${favorites.has(g.name)?"saved":""}" aria-label="Toggle favorite">${favorites.has(g.name)?"★":"☆"}</button></div></div>`;el.querySelector(".play-btn").onclick=()=>launch(g);el.querySelector(".star").onclick=()=>{favorites.has(g.name)?favorites.delete(g.name):favorites.add(g.name);localStorage.setItem("duckArcadeFavorites",JSON.stringify([...favorites]));render()};return el}
+function render(){const q=$("#search").value.toLowerCase();const filtered=games.filter(g=>(activeCategory==="All"||g.category===activeCategory)&&(`${g.name} ${g.description} ${g.category}`).toLowerCase().includes(q));grid.replaceChildren();filtered.forEach(g=>grid.append(card(g)));if(!filtered.length)grid.innerHTML='<div class="empty">No games found. Try another search.</div>';favGrid.replaceChildren();const favs=games.filter(g=>favorites.has(g.name));$("#fav-count").textContent=favs.length;if(favs.length)favs.forEach(g=>favGrid.append(card(g)));else favGrid.innerHTML='<div class="empty">No favorites yet — tap ☆ on a game to save it.</div>';document.querySelectorAll(".chip").forEach(b=>b.classList.toggle("active",b.textContent===activeCategory))}
+function launch(g){$("#player-title").textContent=g.name;$("#game-frame").src=g.url;$("#open-direct").href=g.url;$("#player").hidden=false;document.body.style.overflow="hidden"}
+function close(){ $("#player").hidden=true;$("#game-frame").src="about:blank";document.body.style.overflow=""}
+$("#search").addEventListener("input",render);$("#category").addEventListener("change",e=>{activeCategory=e.target.value;render()});$("#close-player").onclick=close;$("#player").addEventListener("click",e=>{if(e.target.id==="player")close()});document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});render();
+"""
+
+(base/"index.html").write_text(html)
+(base/"style.css").write_text(css)
+(base/"script.js").write_text(js)
+zip_path = Path("/mnt/data/duck-arcade-github-pages.zip")
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    for p in base.iterdir():
+        z.write(p, p.name)
+print(f"Created {zip_path} with: {', '.join(p.name for p in base.iterdir())}")
