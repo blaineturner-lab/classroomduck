@@ -9,91 +9,37 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#home">
-      <span class="duck">🦆</span>
-      <span>Duck<span class="accent">Arcade</span></span>
-    </a>
-    <nav>
-      <a href="#home">Home</a>
-      <a href="#all-games">Games</a>
-      <a href="#favorites">Favorites</a>
-    </nav>
+    <a class="brand" href="#home"><span class="duck">🦆</span><span>Duck<span class="accent">Arcade</span></span></a>
+    <nav><a href="#home">Home</a><a href="#all-games">Games</a><a href="#favorites">Favorites</a></nav>
   </header>
-
-  <main>
+  <main id="home">
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">YOUR NEXT BREAK STARTS HERE</p>
         <h1>Pick a game.<br><span>Take a break.</span></h1>
-        <p class="sub">
-          A searchable collection of browser games. Choose a game to open it
-          in a new tab or try the in-page player when the game allows embedding.
-        </p>
+        <p class="sub">A collection of games from Coolmath Games. Choose a game to open it directly in a new tab.</p>
         <a class="primary" href="#all-games">Explore games <span>↗</span></a>
       </div>
-
-      <div class="hero-art" aria-hidden="true">
-        <div class="orb orb-one"></div>
-        <div class="orb orb-two"></div>
-        <div class="duck-big">🦆</div>
-        <div class="spark">✦</div>
-      </div>
+      <div class="hero-art" aria-hidden="true"><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="duck-big">🦆</div><div class="spark">✦</div></div>
     </section>
 
     <section class="toolbar" id="all-games">
-      <div>
-        <p class="eyebrow">THE LIBRARY</p>
-        <h2>All games</h2>
-      </div>
+      <div><p class="eyebrow">THE LIBRARY</p><h2>Coolmath Games</h2></div>
       <div class="tools">
         <input id="search" type="search" placeholder="Search games..." aria-label="Search games">
-        <select id="category" aria-label="Filter by category">
-          <option value="All">All categories</option>
-        </select>
+        <select id="category" aria-label="Filter by category"><option value="All">All categories</option></select>
       </div>
     </section>
-
-    <section class="chips" id="category-chips"></section>
+    <section class="chips" id="category-chips" aria-label="Game categories"></section>
     <section class="game-grid" id="game-grid" aria-live="polite"></section>
 
     <section class="favorites-section" id="favorites">
-      <div>
-        <p class="eyebrow">YOUR SHORTLIST</p>
-        <h2>Favorites <span class="fav-count" id="fav-count">0</span></h2>
-      </div>
-      <p class="muted">Tap the star on any game to save it here on this device.</p>
+      <div><p class="eyebrow">YOUR SHORTLIST</p><h2>Favorites <span class="fav-count" id="fav-count">0</span></h2></div>
+      <p class="muted">Tap the star on any game to save it on this device.</p>
       <div class="game-grid" id="favorite-grid"></div>
     </section>
   </main>
-
-  <footer>
-    <span>🦆 Duck Arcade</span>
-    <span>Game links are provided by their respective publishers.</span>
-  </footer>
-
-  <div class="player-backdrop" id="player" hidden>
-    <section class="player-panel" role="dialog" aria-modal="true" aria-labelledby="player-title">
-      <div class="player-head">
-        <div>
-          <p class="eyebrow">NOW PLAYING</p>
-          <h2 id="player-title">Game</h2>
-        </div>
-        <button id="close-player" class="icon-btn" aria-label="Close">✕</button>
-      </div>
-
-      <iframe id="game-frame" title="Game player"
-        allow="fullscreen; autoplay; gamepad"
-        referrerpolicy="no-referrer"></iframe>
-
-      <div class="player-foot">
-        <span id="frame-note">If the game does not load here, open it directly.</span>
-        <a id="open-direct" class="primary small" target="_blank" rel="noopener noreferrer">
-          Open game in new tab ↗
-        </a>
-      </div>
-    </section>
-  </div>
-
+  <footer><span>🦆 Duck Arcade</span><span>Game links belong to Coolmath Games and their respective publishers.</span></footer>
   <script src="script.js"></script>
 </body>
 </html>
